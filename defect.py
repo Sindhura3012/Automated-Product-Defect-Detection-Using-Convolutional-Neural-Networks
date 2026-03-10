@@ -1,40 +1,42 @@
 import streamlit as st
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from PIL import Image
 
 st.title("Automated Product Defect Detection Using CNN")
 
-st.write("Upload a product image to check whether it is defective or non-defective.")
+st.write("Upload an image to detect whether the product is defective or non-defective.")
 
-# Load trained model
-@st.cache_resource
-def load_cnn_model():
-    model = load_model("model.h5")
-    return model
+# Build simple CNN model
+model = Sequential([
+    Conv2D(32,(3,3),activation='relu',input_shape=(128,128,3)),
+    MaxPooling2D(2,2),
+    Conv2D(64,(3,3),activation='relu'),
+    MaxPooling2D(2,2),
+    Flatten(),
+    Dense(64,activation='relu'),
+    Dense(1,activation='sigmoid')
+])
 
-model = load_cnn_model()
+model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
 
-# Image uploader
-uploaded_file = st.file_uploader("Upload Product Image", type=["jpg","png","jpeg"])
+uploaded_file = st.file_uploader("Upload Image", type=["jpg","png","jpeg"])
 
 if uploaded_file is not None:
+
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
     img = img.resize((128,128))
-    img_array = image.img_to_array(img)
-    img_array = img_array / 255.0
+    img_array = image.img_to_array(img)/255.0
     img_array = np.expand_dims(img_array, axis=0)
 
     prediction = model.predict(img_array)
 
     if prediction[0][0] > 0.5:
-        result = "Defective Product"
+        st.success("Defective Product")
     else:
-        result = "Non-Defective Product"
-
-    st.subheader("Prediction Result")
-    st.success(result)
+        st.success("Non-Defective Product")
