@@ -1,45 +1,46 @@
 import streamlit as st
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageEnhance
 
-# Title
 st.title("Automated Product Defect Detection")
 
-st.write("Upload a product image to detect whether it is defective or non-defective.")
+st.write("Upload a product image to check whether it is defective or non-defective.")
 
-# Upload image
-uploaded_file = st.file_uploader("Upload Product Image", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Upload Image", type=["jpg","png","jpeg"])
 
 if uploaded_file is not None:
 
-    # Open image
     img = Image.open(uploaded_file)
-
-    # Show image
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    # Convert to grayscale
-    img_gray = img.convert("L")
+    # resize image
+    img = img.resize((256,256))
 
-    # Detect edges (helps identify cracks or broken areas)
-    edges = img_gray.filter(ImageFilter.FIND_EDGES)
+    # convert to grayscale
+    gray = img.convert("L")
 
-    # Convert to numpy array
+    # increase contrast
+    enhancer = ImageEnhance.Contrast(gray)
+    gray = enhancer.enhance(2)
+
+    # detect edges
+    edges = gray.filter(ImageFilter.FIND_EDGES)
+
     edge_array = np.array(edges)
 
-    # Calculate edge intensity
+    # calculate edge intensity
     edge_strength = edge_array.mean()
 
-    # Defect detection logic
-    if edge_strength > 25:
+    st.write("Edge Strength:", edge_strength)
+
+    # improved threshold
+    if edge_strength > 12:
         result = "Defective Product"
     else:
         result = "Non-Defective Product"
 
-    # Show result
     st.subheader("Prediction Result")
     st.success(result)
 
-    # Show edge image for visualization
-    st.subheader("Edge Detection")
-    st.image(edges, caption="Detected Edges", use_column_width=True)
+    st.subheader("Edge Detection Output")
+    st.image(edges, use_column_width=True)
